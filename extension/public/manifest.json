@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "ExTention",
+  "short_name": "ExTention",
+  "version": "1.0.0",
+  "description": "ExTention: No more tension. Block phishing, malware, and Rickrolls with your own API key.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "https://www.virustotal.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "ExTention"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["interstitial.html", "interstitial.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

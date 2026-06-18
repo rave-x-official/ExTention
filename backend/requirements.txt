@@ -1,0 +1,7 @@
+# ExTention - No More Tension.
+# License: GNU General Public License v3.0
+# Copyright (C) 2026 AG (Silver)
+
+fastapi>=0.111.0
+uvicorn[standard]>=0.30.0
+requests>=2.32.0
