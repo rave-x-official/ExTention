@@ -167,7 +167,7 @@ The popup is built by **Vite** (React). The background service worker and conten
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-Copyright (C) 2026 [Your Name]
+Copyright (C) 2026 AG (Silver)
 
 This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)** — see the [LICENSE](./LICENSE) file for the full text.
 

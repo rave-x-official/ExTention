@@ -1,19 +1,3 @@
-/* ExTention - No More Tension.
- * Copyright (C) 2026 AG (Silver)
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
 import {
   checkUrl,
   validateApiKey,
@@ -111,20 +95,20 @@ function cleanCache(
   );
 }
 
-async function redirectToInterstitial(
+function redirectToInterstitial(
   tabId: number,
   url: string,
   threatType: string,
   label: string,
-): Promise<void> {
-  await chrome.storage.local.set({
-    blockedUrl: url,
-    threatType,
-    threatLabel: label,
-  });
-  await chrome.tabs.update(tabId, {
-    url: chrome.runtime.getURL("interstitial.html"),
-  });
+): void {
+  chrome.storage.local.set(
+    { blockedUrl: url, threatType, threatLabel: label },
+    () => {
+      chrome.tabs.update(tabId, {
+        url: chrome.runtime.getURL("interstitial.html"),
+      });
+    },
+  );
 }
 
 async function isBypassed(url: string): Promise<boolean> {
@@ -148,13 +132,15 @@ async function checkTabUrl(tabId: number, url: string): Promise<void> {
   try {
     const rickrollHit = matchBlocklist(url, RICKROLL_BLOCKLIST);
     if (rickrollHit) {
-      await redirectToInterstitial(tabId, url, "rickroll", rickrollHit);
+      chrome.action.setBadgeText({ text: "RR", tabId });
+      redirectToInterstitial(tabId, url, "rickroll", rickrollHit);
       return;
     }
 
     const blocklistHit = matchBlocklist(url, BLOCKLIST);
     if (blocklistHit) {
-      await redirectToInterstitial(tabId, url, "malware", blocklistHit);
+      chrome.action.setBadgeText({ text: "!!", tabId });
+      redirectToInterstitial(tabId, url, "malware", blocklistHit);
       return;
     }
 
@@ -170,12 +156,7 @@ async function checkTabUrl(tabId: number, url: string): Promise<void> {
           cached.result.stats && cached.result.stats.suspicious > 2
             ? "phishing"
             : "malware";
-        await redirectToInterstitial(
-          tabId,
-          url,
-          threatType,
-          cached.result.label,
-        );
+        redirectToInterstitial(tabId, url, threatType, cached.result.label);
       }
       return;
     }
@@ -190,7 +171,7 @@ async function checkTabUrl(tabId: number, url: string): Promise<void> {
       if (result.malicious) {
         const threatType =
           result.stats && result.stats.suspicious > 2 ? "phishing" : "malware";
-        await redirectToInterstitial(tabId, url, threatType, result.label);
+        redirectToInterstitial(tabId, url, threatType, result.label);
       }
     } catch {
       // rate limited, network error, or backend unreachable — skip silently
@@ -202,10 +183,16 @@ async function checkTabUrl(tabId: number, url: string): Promise<void> {
   }
 }
 
-chrome.webNavigation.onCommitted.addListener((details) => {
-  if (details.frameId !== 0) return;
-  checkTabUrl(details.tabId, details.url);
-});
+chrome.action.setBadgeText({ text: "ON" });
+
+chrome.webRequest.onBeforeRequest.addListener(
+  (details) => {
+    if (details.type !== "main_frame") return;
+    if (!details.url) return;
+    checkTabUrl(details.tabId, details.url);
+  },
+  { urls: ["http://*/*", "https://*/*"] },
+);
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "VALIDATE_KEY") {
